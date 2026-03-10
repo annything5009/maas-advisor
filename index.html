@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaaS Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+<style>
+:root {
+  --bg:#0a0f1a; --s1:#111827; --s2:#1c2537; --s3:#243047;
+  --bd:#2d3a50; --bd2:#3d4f6a;
+  --gr:#00d4a8; --gr2:#00a882;
+  --yl:#f5c842; --yl2:#c9a030;
+  --bl:#4a9eff; --bl2:#2d7de0;
+  --rd:#ff6b6b;
+  --tx:#e8f0fe; --mu:#7a8ba8; --mu2:#4a5a72;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Anuphan',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;overflow-x:hidden}
+
+/* noise overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:28px 18px 140px}
+
+/* ─── header ─── */
+.hd{text-align:center;margin-bottom:32px;padding-top:8px}
+.hd-logo{font-size:13px;font-weight:600;color:var(--gr);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;opacity:.8}
+.hd-title{font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1.2;margin-bottom:6px}
+.hd-title span{color:var(--gr)}
+.hd-sub{font-size:13px;color:var(--mu);font-weight:300}
+
+/* ─── step progress dots ─── */
+.step-dots{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:28px}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--bd2);transition:all .3s}
+.dot.done{background:var(--gr);width:20px}
+.dot.active{background:var(--gr);box-shadow:0 0 10px var(--gr)}
+.step-label{font-size:12px;color:var(--mu);text-align:center;margin-top:-18px;margin-bottom:24px}
+
+/* ─── back btn ─── */
+.back{display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid var(--bd);border-radius:8px;color:var(--mu);font-family:inherit;font-size:12px;padding:5px 12px;cursor:pointer;margin-bottom:18px;transition:all .2s}
+.back:hover{border-color:var(--bd2);color:var(--tx)}
+
+/* ─── question card ─── */
+.qcard{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:28px 24px;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.qlabel{font-size:11px;font-weight:600;color:var(--gr);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.qtext{font-size:21px;font-weight:700;line-height:1.4;margin-bottom:22px}
+.qsub{font-size:13px;color:var(--mu);margin-top:-16px;margin-bottom:20px;font-weight:300}
+
+/* ─── option buttons ─── */
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:center;gap:14px;background:var(--s2);border:1.5px solid var(--bd);border-radius:14px;padding:14px 18px;cursor:pointer;text-align:left;color:var(--tx);font-family:inherit;font-size:15px;font-weight:500;transition:all .2s;position:relative;overflow:hidden}
+.opt::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,168,.06),transparent);opacity:0;transition:opacity .2s}
+.opt:hover{border-color:var(--gr);transform:translateX(4px)}
+.opt:hover::after{opacity:1}
+.opt-ico{font-size:24px;min-width:34px;text-align:center;filter:drop-shadow(0 0 6px rgba(255,255,255,.2))}
+.opt-txt{flex:1}
+.opt-desc{font-size:12px;color:var(--mu);margin-top:2px;font-weight:300}
+.opt-arr{color:var(--mu2);font-size:18px;transition:transform .2s}
+.opt:hover .opt-arr{transform:translateX(4px);color:var(--gr)}
+
+/* ─── results ─── */
+.res{animation:fadeUp .35s ease}
+.res-hd{text-align:center;margin-bottom:20px}
+.res-hd h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.res-hd p{color:var(--mu);font-size:13px}
+.res-hd strong{color:var(--yl)}
+
+/* summary chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:24px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 12px;border-radius:99px;font-weight:500;white-space:nowrap}
+.chip-area{background:rgba(0,232,184,.18);border:1px solid rgba(0,232,184,.5);color:#00e8b8}
+.chip-budget{background:rgba(245,200,66,.18);border:1px solid rgba(245,200,66,.5);color:#f5d040}
+.chip-mode{background:rgba(74,158,255,.18);border:1px solid rgba(74,158,255,.5);color:#70b8ff}
+.chip-count{background:rgba(255,255,255,.06);border:1px solid var(--bd);color:var(--mu)}
+
+/* ─── question block ─── */
+.qblock{margin-bottom:26px}
+.qblock-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.qnum{background:linear-gradient(135deg,var(--gr),var(--bl));color:#0a0f1a;font-size:11px;font-weight:700;padding:4px 12px;border-radius:99px;letter-spacing:.5px}
+.qblock-sub{font-size:12px;color:var(--mu);font-weight:300}
+
+/* ─── plan cards grid ─── */
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+
+/* ─── plan card ─── */
+.pc{background:var(--s2);border:2px solid var(--bd);border-radius:16px;padding:14px 13px;cursor:pointer;transition:all .25s;position:relative;display:flex;flex-direction:column;gap:0;overflow:hidden}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:transparent;transition:background .25s}
+.pc:hover{border-color:var(--gr);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.pc:hover::before{background:linear-gradient(90deg,var(--gr),var(--bl))}
+.pc.selected{border-color:var(--gr);background:rgba(0,212,168,.08);box-shadow:0 0 0 1px var(--gr),0 8px 24px rgba(0,212,168,.15)}
+.pc.selected::before{background:linear-gradient(90deg,var(--gr),var(--bl))}
+
+/* check */
+.pc-chk{position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:var(--gr);color:#0a0f1a;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.6);transition:all .2s}
+.pc.selected .pc-chk{opacity:1;transform:scale(1)}
+
+.pc-plan{font-size:11px;font-weight:600;color:var(--mu);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.pc-price{font-size:20px;font-weight:700;color:var(--gr);line-height:1;margin-bottom:2px}
+.pc-price-sub{font-size:11px;color:var(--mu);margin-bottom:10px;font-weight:300}
+
+/* badges row */
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px;min-height:22px}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.3px}
+.badge-cheap{background:rgba(0,212,168,.2);color:var(--gr);border:1px solid rgba(0,212,168,.4)}
+.badge-match{background:rgba(74,158,255,.2);color:var(--bl);border:1px solid rgba(74,158,255,.4)}
+.badge-disc{background:rgba(245,200,66,.2);color:var(--yl);border:1px solid rgba(245,200,66,.4)}
+.badge-unlimited{background:rgba(160,120,255,.15);color:#b39dff;border:1px solid rgba(160,120,255,.3)}
+
+.pc-div{height:1px;background:rgba(255,255,255,.05);margin:7px 0}
+.pc-row{display:flex;align-items:baseline;justify-content:space-between;font-size:11px;padding:2.5px 0}
+.pc-row .l{color:var(--mu);font-weight:300;flex:1;padding-right:4px}
+.pc-row .v{font-weight:600;text-align:right;white-space:nowrap}
+.pc-row .v.hi{color:var(--gr)}
+.pc-row .v.di{color:var(--yl)}
+.pc-row .v.na{color:var(--mu2);font-weight:300}
+
+/* ─── sticky bar ─── */
+.sticky{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,26,.97);border-top:1px solid var(--bd);padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:14px;z-index:100;backdrop-filter:blur(16px)}
+.sticky-info{font-size:13px;color:var(--mu)}
+.sticky-info strong{color:var(--tx);font-size:15px;display:block;margin-bottom:1px}
+.confirm-btn{background:linear-gradient(135deg,var(--gr),var(--bl2));color:#fff;border:none;border-radius:12px;padding:12px 26px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;white-space:nowrap;letter-spacing:.3px}
+.confirm-btn:hover{opacity:.88}
+.confirm-btn:disabled{background:var(--s3);color:var(--mu);cursor:not-allowed;opacity:1}
+
+/* ─── confirmed box ─── */
+.conf{background:#1e2d47;border:1.5px solid #3a5070;border-radius:20px;padding:24px;margin-bottom:16px;animation:fadeUp .3s ease}
+.conf-logo{font-size:12px;font-weight:600;color:#00e8b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+.conf-title{font-size:18px;font-weight:700;color:#00e8b8;margin-bottom:4px}
+.conf-qref{display:inline-block;font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;white-space:nowrap;background:linear-gradient(135deg,rgba(0,232,184,.25),rgba(74,158,255,.25));border:1.5px solid rgba(0,232,184,.5);border-radius:10px;padding:6px 18px;margin:6px 0 10px;}
+.conf-sub{font-size:13px;color:#9ab0cc;margin-bottom:16px}
+.conf-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+.conf-detail{background:#263550;border-radius:12px;padding:12px 16px;text-align:left}
+.conf-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.conf-row:last-child{border:none}
+.conf-row .cl{color:#9ab0cc;font-weight:400;white-space:nowrap}
+.conf-row .cv{white-space:nowrap}
+.conf-row .cv{font-weight:700;color:#e8f0fe}
+.conf-row .cv.hi{color:#00e8b8}
+.conf-row .cv.di{color:#f5d040}
+.conf-footer{font-size:11px;color:#6a85a8;text-align:center;margin-top:12px}
+.conf-p1{background:#1a2a40;border:1px solid #2d4060;border-radius:10px;padding:10px 14px;margin:12px 0;text-align:left}
+.conf-p1-title{font-size:10px;font-weight:600;color:#00e8b8;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.conf-p1-grid{display:grid;grid-template-columns:1fr;gap:2px}
+.conf-p1-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
+.conf-p1-row:last-child{border:none}
+.conf-p1-row .pl{color:#7a9ab8;font-weight:400}
+.conf-p1-row .pv{font-weight:600;color:#c8ddf0;margin-left:8px;text-align:right}
+
+.screenshot-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;background:rgba(245,200,66,.1);border:1.5px solid rgba(245,200,66,.3);border-radius:12px;color:var(--yl);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px}
+.screenshot-btn:hover{background:rgba(245,200,66,.18)}
+.screenshot-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.restart-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:transparent;border:1px solid var(--bd);border-radius:12px;color:var(--mu);font-family:inherit;font-size:13px;cursor:pointer;transition:all .2s;margin-top:8px}
+.restart-btn:hover{border-color:var(--bd2);color:var(--tx)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--mu)}
+.empty-state .icon{font-size:40px;margin-bottom:14px}
+.empty-state h3{font-size:17px;font-weight:600;color:var(--tx);margin-bottom:6px}
+.empty-state p{font-size:13px;margin-bottom:20px;font-weight:300}
+
+/* ── Part 1 form ── */
+.p1-wrap{animation:fadeUp .3s ease}
+.p1-title{font-size:11px;font-weight:600;color:var(--gr);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.p1-head{font-size:21px;font-weight:700;margin-bottom:4px}
+.p1-sub{font-size:13px;color:var(--mu);margin-bottom:22px;font-weight:300}
+.p1-section{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:14px}
+.p1-section-title{font-size:12px;font-weight:600;color:var(--gr);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;opacity:.8}
+.p1-row{margin-bottom:14px}
+.p1-label{font-size:13px;font-weight:500;color:var(--tx);margin-bottom:7px;display:block}
+.p1-label span{color:var(--mu);font-weight:300;font-size:12px;margin-left:4px}
+.p1-input{width:100%;background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:10px 14px;color:var(--tx);font-family:inherit;font-size:14px;outline:none;transition:border-color .2s}
+.p1-input:focus{border-color:var(--gr)}
+.p1-input::placeholder{color:var(--mu2)}
+.p1-radio-group{display:flex;flex-wrap:wrap;gap:8px}
+.p1-radio{display:flex;align-items:center;gap:7px;background:var(--s2);border:1.5px solid var(--bd);border-radius:10px;padding:8px 14px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--tx)}
+.p1-radio:hover{border-color:var(--bd2)}
+.p1-radio.active{border-color:var(--gr);background:rgba(0,212,168,.08);color:var(--gr)}
+.p1-radio input{display:none}
+.p1-check-group{display:flex;flex-wrap:wrap;gap:8px}
+.p1-table{width:100%;border-collapse:collapse;font-size:12px}
+.p1-table th{color:var(--mu);font-weight:500;padding:6px 8px;text-align:center;border-bottom:1px solid var(--bd);font-size:11px}
+.p1-table th:first-child{text-align:left}
+.p1-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--tx)}
+.p1-table td:not(:first-child){text-align:center}
+.p1-table input[type=number]{width:70px;background:var(--s2);border:1.5px solid var(--bd);border-radius:8px;padding:5px 8px;color:var(--tx);font-family:inherit;font-size:12px;text-align:center;outline:none;transition:border-color .2s}
+.p1-table input[type=number]:focus{border-color:var(--gr)}
+.p1-next-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gr),var(--bl2));color:#fff;border:none;border-radius:14px;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:.3px;transition:opacity .2s}
+.p1-next-btn:hover{opacity:.9}
+.p1-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(0,212,168,.15);color:var(--gr);border:1px solid rgba(0,212,168,.3);margin-left:6px}
+
+/* ── Progress bar ── */
+.prog-wrap{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.prog-bar{flex:1;height:5px;background:var(--bd);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gr),var(--bl));border-radius:99px;transition:width .4s ease}
+.prog-label{font-size:12px;color:var(--mu);white-space:nowrap;font-weight:500}
+
+/* ── Current plan button ── */
+.cur-plan-btn{width:100%;margin-top:12px;padding:14px 18px;background:rgba(255,255,255,.04);border:1.5px dashed var(--bd2);border-radius:14px;color:var(--mu);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:all .25s;text-align:center}
+.cur-plan-btn:hover{border-color:var(--mu);color:var(--tx)}
+.cur-plan-btn.selected{background:rgba(255,107,107,.1);border-color:#ff6b6b;border-style:solid;color:#ff9a9a;font-weight:700}
+
+/* ── Summary table ── */
+.sum-table{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:6px 4px;margin-bottom:4px}
+.sum-row{display:grid;grid-template-columns:80px 1fr auto;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04)}
+.sum-row:last-child{border:none}
+.sum-q{font-size:12px;color:var(--mu);font-weight:500}
+.sum-plan{font-size:13px;font-weight:700;color:var(--gr)}
+.sum-plan.cur{color:#ff9a9a}
+.sum-price{font-size:13px;font-weight:600;color:var(--tx);text-align:right}
+
+/* ── Capture detail blocks ── */
+.cap-grid{display:grid;gap:8px}
+.cap-qblock{background:#1a2a40;border:1px solid #2d4060;border-radius:10px;padding:10px 14px}
+.cap-qnum{font-size:12px;font-weight:700;color:#00e8b8;margin-bottom:6px;white-space:nowrap}
+.cap-plan-tag{background:rgba(0,232,184,.15);border:1px solid rgba(0,232,184,.3);border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;margin-left:6px;color:#fff}
+.cap-cur{font-size:12px;color:#ff9a9a;font-style:italic}
+.cap-rows{}
+.cap-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
+.cap-row:last-child{border:none}
+.cap-row .cl{color:#7a9ab8;font-weight:400}
+.cap-row .hi{color:#00e8b8;font-weight:600}
+.cap-row .di{color:#f5d040;font-weight:600}
+.cap-row .na{color:#4a5a72}
+
+/* ── Survey scroll layout ── */
+.sq-progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:20px;position:sticky;top:0;background:var(--bg);padding:10px 0 8px;z-index:10}
+.sq-progress-bar{flex:1;height:6px;background:var(--bd);border-radius:99px;overflow:hidden}
+.sq-progress-fill{height:100%;background:linear-gradient(90deg,var(--gr),var(--bl));border-radius:99px;transition:width .4s ease}
+.sq-progress-label{font-size:12px;color:var(--mu);white-space:nowrap;font-weight:600;min-width:60px;text-align:right}
+
+.sq-list{display:flex;flex-direction:column;gap:24px;padding-bottom:20px}
+
+.sq-block{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:20px 18px;transition:border-color .3s}
+.sq-block:has(.pc.selected),.sq-block:has(.cur-plan-btn.selected){border-color:rgba(0,212,168,.3)}
+
+.sq-hdr{margin-bottom:14px}
+.sq-num-wrap{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sq-num{font-size:11px;font-weight:700;color:var(--gr);letter-spacing:1.5px;text-transform:uppercase}
+.sq-done{background:var(--gr);color:#0a0f1a;font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px}
+.sq-todo{background:var(--bd);color:var(--mu);font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px}
+.sq-title{font-size:15px;font-weight:600;color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <div class="hd-logo">✦ MaaS Advisor</div>
+    <h1 class="hd-title">เลือกแผน<span>การเดินทาง</span></h1>
+    <p class="hd-sub">โครงการวิจัย MaaS · มหาวิทยาลัยเทคโนโลยีสุรนารี</p>
+  </div>
+  <div id="app"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  DATA — ส่วนที่ 3
+// ══════════════════════════════════════════════════════════
+const PB = {
+  "3.1":{A:{p:590,bts:14,bus:"U",bike:"U",moto:0, taxi:0 }, B:{p:520,bts:14,bus:0,  bike:"U",moto:10,taxi:10}, C:{p:480,bts:10,bus:10, bike:"U",moto:10,taxi:10}},
+  "3.2":{A:{p:490,bts:10,bus:"U",bike:"U",moto:10,taxi:0 }, B:{p:490,bts:10,bus:"U",bike:"U",moto:0, taxi:10}, C:{p:540,bts:14,bus:"U",bike:0,  moto:0, taxi:0 }},
+  "3.3":{A:{p:550,bts:14,bus:10, bike:"U",moto:0, taxi:0 }, B:{p:490,bts:10,bus:"U",bike:"U",moto:10,taxi:0 }, C:{p:450,bts:10,bus:"U",bike:0,  moto:0, taxi:10}},
+  "3.4":{A:{p:420,bts:10,bus:0,  bike:"U",moto:20,taxi:10}, B:{p:170,bts:0, bus:10, bike:"U",moto:20,taxi:0 }, C:{p:230,bts:0, bus:"U",bike:"U",moto:0, taxi:20}},
+  "3.5":{A:{p:400,bts:10,bus:10, bike:0,  moto:10,taxi:0 }, B:{p:160,bts:0, bus:10, bike:"U",moto:0, taxi:10}, C:{p:220,bts:0, bus:"U",bike:"U",moto:10,taxi:10}},
+  "3.6":{A:{p:530,bts:10,bus:10, bike:"U",moto:20,taxi:20}, B:{p:240,bts:0, bus:14, bike:"U",moto:20,taxi:10}, C:{p:170,bts:0, bus:10, bike:"U",moto:20,taxi:0 }},
+  "3.7":{A:{p:400,bts:10,bus:0,  bike:0,  moto:20,taxi:20}, B:{p:420,bts:10,bus:0,  bike:"U",moto:20,taxi:10}, C:{p:430,bts:10,bus:0,  bike:"U",moto:10,taxi:20}},
+  "3.8":{A:{p:230,bts:0, bus:10, bike:"U",moto:20,taxi:20}, B:{p:200,bts:0, bus:10, bike:"U",moto:20,taxi:10}, C:{p:210,bts:0, bus:10, bike:"U",moto:10,taxi:20}},
+};
+const PC = {
+  "3.9" :{A:{p:170,bus:"U",bike:"U",moto:0, taxi:0 }, B:{p:190,bus:"U",bike:"U",moto:10,taxi:0 }, C:{p:130,bus:10, bike:"U",moto:10,taxi:10}},
+  "3.10":{A:{p:190,bus:"U",bike:0,  moto:20,taxi:10}, B:{p:180,bus:10, bike:"U",moto:10,taxi:10}, C:{p:130,bus:10, bike:"U",moto:0, taxi:0 }},
+  "3.11":{A:{p:180,bus:10, bike:"U",moto:10,taxi:10}, B:{p:150,bus:10, bike:"U",moto:10,taxi:0 }, C:{p:160,bus:10, bike:"U",moto:0, taxi:10}},
+  "3.12":{A:{p:70, bus:0,  bike:"U",moto:10,taxi:0 }, B:{p:80, bus:0,  bike:"U",moto:0, taxi:10}, C:{p:100,bus:0,  bike:"U",moto:10,taxi:10}},
+  "3.13":{A:{p:130,bus:10, bike:0,  moto:10,taxi:10}, B:{p:100,bus:10, bike:0,  moto:10,taxi:0 }, C:{p:110,bus:10, bike:0,  moto:0, taxi:10}},
+  "3.14":{A:{p:100,bus:0,  bike:0,  moto:20,taxi:20}, B:{p:80, bus:0,  bike:0,  moto:10,taxi:20}, C:{p:70, bus:0,  bike:0,  moto:20,taxi:10}},
+  "3.15":{A:{p:100,bus:0,  bike:0,  moto:20,taxi:20}, B:{p:150,bus:0,  bike:"U",moto:20,taxi:20}, C:{p:130,bus:10, bike:0,  moto:10,taxi:10}},
+  "3.16":{A:{p:100,bus:0,  bike:"U",moto:20,taxi:20}, B:{p:200,bus:10, bike:"U",moto:20,taxi:10}, C:{p:180,bus:10, bike:"U",moto:10,taxi:20}},
+};
+const ALL_QS = {bkk:["3.1","3.2","3.3","3.4","3.5","3.6","3.7","3.8"], chon:["3.9","3.10","3.11","3.12","3.13","3.14","3.15","3.16"]};
+
+// ══════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════
+let P1 = {};
+// S.screen: 'home' | 'p1' | 'p3-area' | 'p3-survey' | 'p3-done'
+let S = {
+  screen: 'home',
+  area: null,          // 'bkk' | 'chon'
+  qIndex: 0,           // current question index in survey
+  answers: {},         // {qk: 'A'|'B'|'C'|'current'}
+  confirmed: false,
+};
+
+function getQs(){ return ALL_QS[S.area] || []; }
+function getPlans(){ return S.area === 'bkk' ? PB : PC; }
+function currentQk(){ return getQs()[S.qIndex]; }
+
+// ══════════════════════════════════════════════════════════
+//  RENDER ROUTER
+// ══════════════════════════════════════════════════════════
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  if(S.screen==='home')      renderHome();
+  else if(S.screen==='p1')   renderPart1();
+  else if(S.screen==='p3-area')   renderAreaSelect();
+  else if(S.screen==='p3-survey') renderSurvey();
+  else if(S.screen==='p3-done')   renderDone();
+}
+
+// ── Helpers ──────────────────────────────────────────────
+function fv(val, isDisc){
+  if(val==="U") return `<span class="hi">ไม่จำกัด</span>`;
+  if(val===0)   return `<span class="na">–</span>`;
+  if(isDisc && val>0) return `<span class="di">-${val}%</span>`;
+  if(typeof val==="number" && val>0) return `<span>${val} ครั้ง</span>`;
+  return `<span>${val}</span>`;
+}
+
+function getBadges(qk, pk){
+  const plans = getPlans(); const d = plans[qk][pk];
+  const all = ['A','B','C'];
+  const badges = [];
+  const minP = Math.min(...all.map(p=>plans[qk][p].p));
+  if(d.p===minP) badges.push('<span class="badge badge-cheap">💰 ถูกสุด</span>');
+  const maxDisc = Math.max(...all.map(p=>(plans[qk][p].moto||0)+(plans[qk][p].taxi||0)));
+  const myDisc = (d.moto||0)+(d.taxi||0);
+  if(myDisc===maxDisc && maxDisc>0) badges.push('<span class="badge badge-disc">🏷️ ส่วนลดสูงสุด</span>');
+  if(d.bike==="U" && all.some(p=>plans[qk][p].bike!=="U")) badges.push('<span class="badge badge-unlimited">🚲 ไม่จำกัด</span>');
+  const btsVals = all.map(p=>plans[qk][p].bts==="U"?999:(plans[qk][p].bts||0));
+  if(d.bts && btsVals[['A','B','C'].indexOf(pk)]===Math.max(...btsVals) && Math.max(...btsVals)>0 && all.some(p=>plans[qk][p].bts!==d.bts))
+    badges.push('<span class="badge badge-match">🚇 BTS มากสุด</span>');
+  return badges.join('');
+}
+
+// ── Progress bar ─────────────────────────────────────────
+function progressBar(cur, total){
+  const pct = Math.round((cur/total)*100);
+  return `<div class="prog-wrap">
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+    <div class="prog-label">ข้อ ${cur} / ${total}</div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════════════════════════
+function renderHome(){
+  document.getElementById('app').innerHTML = `
+    <div class="p1-wrap" style="text-align:center;padding-top:8px">
+      <div style="font-size:40px;margin-bottom:16px">🚌</div>
+      <div style="font-size:11px;font-weight:600;color:var(--gr);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px">แบบสอบถาม</div>
+      <div style="font-size:24px;font-weight:700;margin-bottom:6px;line-height:1.3">เลือกส่วนที่จะทำ</div>
+      <div style="font-size:13px;color:var(--mu);margin-bottom:28px;font-weight:300">โครงการวิจัย MaaS · มหาวิทยาลัยเทคโนโลยีสุรนารี</div>
+      <div style="display:grid;gap:12px;max-width:420px;margin:0 auto">
+        <button class="opt" style="border-radius:18px;padding:20px 22px" onclick="S.screen='p1';render()">
+          <span class="opt-ico">📋</span>
+          <span class="opt-txt">
+            <div style="font-size:16px;font-weight:700">ส่วนที่ 1</div>
+            <div class="opt-desc">ข้อมูลทั่วไปและพฤติกรรมการเดินทาง · ข้อ 1.1–1.15</div>
+          </span>
+          <span class="opt-arr">›</span>
+        </button>
+        <button class="opt" style="border-radius:18px;padding:20px 22px" onclick="S.screen='p3-area';S.answers={};S.qIndex=0;render()">
+          <span class="opt-ico">🗺️</span>
+          <span class="opt-txt">
+            <div style="font-size:16px;font-weight:700">ส่วนที่ 3</div>
+            <div class="opt-desc">ประเมินความคุ้มค่าแบบตัวเลือก (Stated Preference) · 8 ข้อ</div>
+          </span>
+          <span class="opt-arr">›</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  PART 3 — AREA SELECT
+// ══════════════════════════════════════════════════════════
+function renderAreaSelect(){
+  document.getElementById('app').innerHTML = `
+    <button class="back" onclick="S.screen='home';render()">← ย้อนกลับ</button>
+    <div class="qcard" style="margin-top:12px">
+      <div class="qlabel">ส่วนที่ 3 · เริ่มต้น</div>
+      <div class="qtext">คุณอาศัย/เดินทางในพื้นที่ใด?</div>
+      <div class="opts">
+        <button class="opt" onclick="S.area='bkk';S.screen='p3-survey';S.qIndex=0;render()">
+          <span class="opt-ico">🏙️</span>
+          <span class="opt-txt"><div>กรุงเทพมหานคร</div><div class="opt-desc">ข้อ 3.1–3.8 · มีรถไฟฟ้า BTS/MRT/ARL</div></span>
+          <span class="opt-arr">›</span>
+        </button>
+        <button class="opt" onclick="S.area='chon';S.screen='p3-survey';S.qIndex=0;render()">
+          <span class="opt-ico">🌊</span>
+          <span class="opt-txt"><div>จังหวัดชลบุรี</div><div class="opt-desc">ข้อ 3.9–3.16 · ไม่มีรถไฟฟ้า</div></span>
+          <span class="opt-arr">›</span>
+        </button>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  PART 3 — SURVEY (all questions, scroll to answer)
+// ══════════════════════════════════════════════════════════
+function renderSurvey(){
+  const qs = getQs();
+  const plans = getPlans();
+  const isBkk = S.area === 'bkk';
+  const allAnswered = qs.every(q => S.answers[q]);
+  const answered = qs.filter(q => S.answers[q]).length;
+
+  const blocks = qs.map((qk, idx) => {
+    const chosen = S.answers[qk] || null;
+
+    const planCards = ['A','B','C'].map(pk => {
+      const d = plans[qk][pk];
+      const isSel = chosen === pk;
+      const badges = getBadges(qk, pk);
+      const rows = [];
+      if(isBkk) rows.push(['🚇 BTS/MRT/ARL', fv(d.bts, false)]);
+      rows.push(['🚌 รถเมล์/บัส',    fv(d.bus,  false)]);
+      rows.push(['🚲 จักรยาน',        fv(d.bike, false)]);
+      rows.push(['🛵 มอเตอร์ไซค์รับจ้าง', fv(d.moto, true)]);
+      rows.push(['🚕 แท็กซี่/รถรับจ้าง',  fv(d.taxi, true)]);
+      return `<div class="pc${isSel?' selected':''}" onclick="pickAnswer('${qk}','${pk}')">
+        <div class="pc-chk">✓</div>
+        <div class="pc-plan">แผน ${pk}</div>
+        <div class="pc-price">${d.p}</div>
+        <div class="pc-price-sub">บาท/สัปดาห์</div>
+        <div class="badges">${badges}</div>
+        <div class="pc-div"></div>
+        ${rows.map(([l,v])=>`<div class="pc-row"><span class="l">${l}</span>${v}</div>`).join('')}
+      </div>`;
+    }).join('');
+
+    const curSel = chosen === 'current';
+    const answered_this = !!chosen;
+
+    return `<div class="sq-block" id="sq-${qk}">
+      <div class="sq-hdr">
+        <div class="sq-num-wrap">
+          <span class="sq-num">ข้อ ${qk}</span>
+          ${answered_this ? `<span class="sq-done">✓</span>` : `<span class="sq-todo">${idx+1}/${qs.length}</span>`}
+        </div>
+        <div class="sq-title">เลือกแผนที่คุ้มค่าที่สุดสำหรับคุณ</div>
+      </div>
+      <div class="pcards" style="grid-template-columns:repeat(3,1fr)">${planCards}</div>
+      <button class="cur-plan-btn${curSel?' selected':''}" onclick="pickAnswer('${qk}','current')">
+        ${curSel?'✓ ':''}แผนการเดินทางปัจจุบันของฉันคุ้มค่ากว่า
+      </button>
+    </div>`;
+  }).join('');
+
+  // progress
+  const pct = Math.round((answered / qs.length) * 100);
+
+  document.getElementById('app').innerHTML = `
+    <button class="back" onclick="S.screen='p3-area';render()">← ย้อนกลับ</button>
+
+    <div class="sq-progress-wrap">
+      <div class="sq-progress-bar"><div class="sq-progress-fill" style="width:${pct}%"></div></div>
+      <div class="sq-progress-label">${answered} / ${qs.length} ข้อ</div>
+    </div>
+
+    <div class="sq-list">${blocks}</div>
+
+    <div class="sticky">
+      <div class="sticky-info">
+        <strong>${allAnswered ? 'ตอบครบทุกข้อแล้ว' : `ตอบแล้ว ${answered}/${qs.length} ข้อ`}</strong>
+        ${allAnswered ? 'พร้อมสรุปผล' : 'เลื่อนลงเพื่อตอบให้ครบ'}
+      </div>
+      <button class="confirm-btn" onclick="finishSurvey()" ${allAnswered?'':'disabled'}>สรุปผล ✓</button>
+    </div>`;
+}
+
+function pickAnswer(qk, pk){
+  S.answers[qk] = pk;
+  // re-render just this block without full page reload
+  const qs = getQs();
+  const plans = getPlans();
+  const isBkk = S.area === 'bkk';
+  const answered = qs.filter(q => S.answers[q]).length;
+  const allAnswered = qs.every(q => S.answers[q]);
+
+  // Update this question block
+  const block = document.getElementById('sq-'+qk);
+  if(block){
+    const chosen = pk;
+    // update plan cards
+    block.querySelectorAll('.pc').forEach((el, i) => {
+      const p = ['A','B','C'][i];
+      el.classList.toggle('selected', p === chosen);
+      el.querySelector('.pc-chk').style.opacity = p===chosen?'1':'0';
+      el.querySelector('.pc-chk').style.transform = p===chosen?'scale(1)':'scale(0.6)';
+    });
+    // update current plan btn
+    const curBtn = block.querySelector('.cur-plan-btn');
+    if(curBtn){
+      curBtn.classList.toggle('selected', chosen==='current');
+      curBtn.textContent = (chosen==='current'?'✓ ':'') + 'แผนการเดินทางปัจจุบันของฉันคุ้มค่ากว่า';
+    }
+    // update sq-done/todo badge
+    const numWrap = block.querySelector('.sq-num-wrap');
+    if(numWrap){
+      const idx = qs.indexOf(qk);
+      numWrap.innerHTML = `<span class="sq-num">ข้อ ${qk}</span><span class="sq-done">✓</span>`;
+    }
+  }
+
+  // Update progress bar
+  const pct = Math.round((answered / qs.length) * 100);
+  const fill = document.querySelector('.sq-progress-fill');
+  const label = document.querySelector('.sq-progress-label');
+  if(fill) fill.style.width = pct+'%';
+  if(label) label.textContent = answered+' / '+qs.length+' ข้อ';
+
+  // Update sticky bar
+  const stickyInfo = document.querySelector('.sticky-info strong');
+  const stickyInfo2 = document.querySelector('.sticky-info');
+  const confirmBtn = document.querySelector('.confirm-btn');
+  if(stickyInfo) stickyInfo.textContent = allAnswered ? 'ตอบครบทุกข้อแล้ว' : `ตอบแล้ว ${answered}/${qs.length} ข้อ`;
+  if(stickyInfo2){
+    const small = stickyInfo2.childNodes[stickyInfo2.childNodes.length-1];
+    if(small && small.nodeType===3) small.textContent = allAnswered ? 'พร้อมสรุปผล' : ' เลื่อนลงเพื่อตอบให้ครบ';
+  }
+  if(confirmBtn) confirmBtn.disabled = !allAnswered;
+
+  // Scroll to next unanswered
+  if(!allAnswered){
+    const next = qs.find(q => !S.answers[q]);
+    if(next){
+      const el = document.getElementById('sq-'+next);
+      if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }
+}
+
+function finishSurvey(){
+  if(!getQs().every(q => S.answers[q])) return;
+  S.screen = 'p3-done';
+  render();
+}
+
+// ══════════════════════════════════════════════════════════
+//  PART 3 — DONE / SUMMARY
+// ══════════════════════════════════════════════════════════
+function renderDone(){
+  const qs = getQs();
+  const plans = getPlans();
+  const isBkk = S.area === 'bkk';
+  const areaLbl = isBkk ? 'กรุงเทพมหานคร' : 'ชลบุรี';
+
+  const summaryRows = qs.map(qk => {
+    const ans = S.answers[qk];
+    if(!ans) return '';
+    const isCur = ans === 'current';
+    const price = isCur ? '–' : plans[qk][ans].p + ' บ.';
+    const label = isCur ? 'ปัจจุบัน' : 'แผน ' + ans;
+    return `<div class="sum-row">
+      <span class="sum-q">ข้อ ${qk}</span>
+      <span class="sum-plan ${isCur?'cur':''}">${label}</span>
+      <span class="sum-price">${price}</span>
+    </div>`;
+  }).join('');
+
+  // Full detail capture box
+  const detailBlocks = qs.map(qk => {
+    const ans = S.answers[qk];
+    if(!ans || ans==='current') return `
+      <div class="cap-qblock">
+        <div class="cap-qnum">ข้อ ${qk}</div>
+        <div class="cap-cur">📍 แผนการเดินทางปัจจุบัน</div>
+      </div>`;
+    const d = plans[qk][ans];
+    const rows = [];
+    if(isBkk) rows.push(['🚇 BTS/MRT', fv(d.bts,false)]);
+    rows.push(['🚌 รถเมล์', fv(d.bus,false)]);
+    rows.push(['🚲 จักรยาน', fv(d.bike,false)]);
+    rows.push(['🛵 มอ\'ไซค์รับจ้าง', fv(d.moto,true)]);
+    rows.push(['🚕 แท็กซี่', fv(d.taxi,true)]);
+    return `<div class="cap-qblock">
+      <div class="cap-qnum">ข้อ ${qk} <span class="cap-plan-tag">แผน ${ans} · ${d.p} บ./สัปดาห์</span></div>
+      <div class="cap-rows">${rows.map(([l,v])=>`<div class="cap-row"><span class="cl">${l}</span>${v}</div>`).join('')}</div>
+    </div>`;
+  }).join('');
+
+  // P1 summary
+  const p1rows = [
+    ['เพศ', P1.q11||'–'], ['อายุ', P1.q12?P1.q12+' ปี':'–'],
+    ['สถานภาพ', P1.q13||'–'], ['บุตรหลาน', (P1.q14||[]).join(', ')||'–'],
+    ['การศึกษา', P1.q15||'–'], ['อาชีพ', P1.q19||'–'],
+    ['เขตที่พัก', P1.q110||'–'],
+    ['รายได้ส่วนตัว', P1.q16?Number(P1.q16).toLocaleString()+' บ./เดือน':'–'],
+    ['รายได้ครัวเรือน', P1.q17?Number(P1.q17).toLocaleString()+' บ./เดือน':'–'],
+    ['สมาชิกในบ้าน', P1.q18?P1.q18+' คน':'–'],
+    ['ยานพาหนะ (จักรยาน/มอ\'ไซค์/รถยนต์)', (P1.q111a||0)+'/'+(P1.q111b||0)+'/'+(P1.q111c||0)+' คัน'],
+    ['ใบขับขี่', (P1.q112||[]).join(', ')||'–'],
+    ['วัตถุประสงค์เดินทาง', (P1.q114||[]).join(', ')||'–'],
+  ].map(([l,v])=>`<div class="conf-p1-row"><span class="pl">${l}</span><span class="pv">${v}</span></div>`).join('');
+
+  const p1_1_15 = [
+    ['การเดิน/วิ่ง', P1.q115_walk_n, P1.q115_walk_b],
+    ['จักรยาน/สกูตเตอร์', P1.q115_bike_n, P1.q115_bike_b],
+    ['รถยนต์', P1.q115_car_n, P1.q115_car_b],
+    ['รถจักรยานยนต์', P1.q115_moto_n, P1.q115_moto_b],
+    ['รถไฟฟ้า BTS/MRT/ARL', P1.q115_bts_n, P1.q115_bts_b],
+    ['เช่าจักรยาน/สกูตเตอร์', P1.q115_rentbike_n, P1.q115_rentbike_b],
+    ['แท็กซี่/รถรับจ้าง', P1.q115_taxi_n, P1.q115_taxi_b],
+    ['มอ\'ไซค์รับจ้าง', P1.q115_motosvc_n, P1.q115_motosvc_b],
+    ['รถเมล์/รถบัส', P1.q115_bus_n, P1.q115_bus_b],
+  ].map(([l,n,b])=>`<div class="conf-p1-row"><span class="pl">${l}</span><span class="pv">${n||'–'} ครั้ง · ${b||'–'} บ.</span></div>`).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div style="animation:fadeUp .3s ease">
+      <div class="res-hd" style="margin-bottom:16px">
+        <h2>✅ บันทึกการตอบแล้ว</h2>
+        <p>สรุปการเลือกแผน · <strong style="color:var(--yl)">${areaLbl}</strong></p>
+      </div>
+
+      <!-- quick summary table -->
+      <div class="sum-table">${summaryRows}</div>
+
+      <!-- capture box -->
+      <div id="capture-box" class="conf" style="margin-top:20px">
+        <div class="conf-logo">✦ MaaS Advisor · โครงการวิจัย MaaS · มทส.</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div class="conf-title" style="margin:0">📋 สรุปผลส่วนที่ 3</div>
+          <span class="chip chip-area">📍 ${areaLbl}</span>
+        </div>
+
+        <div class="cap-grid">${detailBlocks}</div>
+
+        ${Object.keys(P1).length > 0 ? `
+        <div class="conf-p1" style="margin-top:12px">
+          <div class="conf-p1-title">ข้อมูลผู้ตอบ (ส่วนที่ 1)</div>
+          ${p1rows}
+          <div style="margin-top:6px;font-size:10px;font-weight:600;color:#00e8b8;letter-spacing:1px;text-transform:uppercase;padding-top:6px;border-top:1px solid rgba(255,255,255,.08)">1.15 การเดินทางเฉลี่ย/สัปดาห์</div>
+          ${p1_1_15}
+        </div>` : ''}
+
+        <div class="conf-footer">โครงการวิจัย MaaS · มหาวิทยาลัยเทคโนโลยีสุรนารี</div>
+      </div>
+
+      <button class="screenshot-btn" id="ss-btn" onclick="takeScreenshot()">📸 บันทึกภาพผลการเลือก</button>
+      <button class="restart-btn" onclick="S.screen='home';S.answers={};S.qIndex=0;render()">🔄 เริ่มใหม่</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  SCREENSHOT
+// ══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════
+//  PART 1 — FORM
+// ══════════════════════════════════════════════════════════
+function toggleRadio(field, val, multi=false){
+  if(multi){
+    if(!P1[field]) P1[field]=[];
+    const idx = P1[field].indexOf(val);
+    if(idx>=0) P1[field].splice(idx,1); else P1[field].push(val);
+  } else {
+    P1[field] = val;
+  }
+  document.querySelectorAll(`[data-field="${field}"]`).forEach(el=>{
+    const v = el.dataset.value;
+    const isActive = multi ? (P1[field]||[]).includes(v) : P1[field]===v;
+    el.classList.toggle('active', isActive);
+  });
+}
+
+function goToPart3(){ S.screen='home'; render(); }
+
+function renderPart1(){
+  document.getElementById('app').innerHTML = `
+    <button class="back" onclick="S.screen='home';render()">← ย้อนกลับ</button>
+    <div class="p1-wrap">
+      <div class="p1-title">✦ ส่วนที่ 1</div>
+      <div class="p1-head">ข้อมูลทั่วไปและพฤติกรรมการเดินทาง</div>
+      <div class="p1-sub">ข้อ 1.1 – 1.15 &nbsp;·&nbsp; กรุณาตอบให้ครบทุกข้อ</div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">ข้อมูลส่วนตัว</div>
+        <div class="p1-row">
+          <label class="p1-label">1.1 เพศ</label>
+          <div class="p1-radio-group">
+            ${["ชาย","หญิง","ไม่ระบุ"].map((v,i)=>`<label class="p1-radio ${P1.q11===v?'active':''}" data-field="q11" data-value="${v}" onclick="toggleRadio('q11','${v}')">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.2 อายุ <span>(ปี)</span></label>
+          <input class="p1-input" type="number" min="1" max="99" placeholder="กรอกอายุ" value="${P1.q12||''}" oninput="P1.q12=this.value" style="max-width:160px">
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.3 สถานภาพ</label>
+          <div class="p1-radio-group">
+            ${["โสด","สมรส","หม้าย/หย่า/แยกกันอยู่"].map((v,i)=>`<label class="p1-radio ${P1.q13===v?'active':''}" data-field="q13" data-value="${v}" onclick="toggleRadio('q13','${v}')">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.4 บุตรหลาน <span>(เลือกได้มากกว่า 1)</span></label>
+          <div class="p1-check-group">
+            ${["ไม่มี","บุตรอายุต่ำกว่า 15 ปี","บุตรอายุมากกว่า 15 ปี"].map((v,i)=>`<label class="p1-radio ${(P1.q14||[]).includes(v)?'active':''}" data-field="q14" data-value="${v}" onclick="toggleRadio('q14','${v}',true)">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.5 ระดับการศึกษาสูงสุด</label>
+          <div class="p1-radio-group">
+            ${["ประถม","มัธยมต้น","มัธยมปลาย/ปวช.","อนุปริญญา/ปวส.","ปริญญาตรี","ปริญญาโท","ปริญญาเอก","อื่นๆ"].map((v,i)=>`<label class="p1-radio ${P1.q15===v?'active':''}" data-field="q15" data-value="${v}" onclick="toggleRadio('q15','${v}')">${i+1}) ${v}</label>`).join("")}
+          </div>
+          ${P1.q15==="อื่นๆ"?`<input class="p1-input" style="margin-top:8px;max-width:280px" placeholder="ระบุ..." value="${P1.q15_other||''}" oninput="P1.q15_other=this.value">`:""}
+        </div>
+      </div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">รายได้และครอบครัว</div>
+        <div class="p1-row">
+          <label class="p1-label">1.6 รายได้เฉลี่ยส่วนบุคคล <span>(บาท/เดือน)</span></label>
+          <input class="p1-input" type="number" min="0" placeholder="กรอกจำนวน" value="${P1.q16||''}" oninput="P1.q16=this.value" style="max-width:220px">
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.7 รายได้เฉลี่ยครัวเรือน <span>(บาท/เดือน)</span></label>
+          <input class="p1-input" type="number" min="0" placeholder="กรอกจำนวน" value="${P1.q17||''}" oninput="P1.q17=this.value" style="max-width:220px">
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.8 จำนวนสมาชิกในครอบครัว <span>(คน)</span></label>
+          <input class="p1-input" type="number" min="1" placeholder="กรอกจำนวน" value="${P1.q18||''}" oninput="P1.q18=this.value" style="max-width:160px">
+        </div>
+      </div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">อาชีพและที่อยู่อาศัย</div>
+        <div class="p1-row">
+          <label class="p1-label">1.9 อาชีพ (ล่าสุด)</label>
+          <div class="p1-radio-group">
+            ${["แม่บ้าน/พ่อบ้าน","บริษัทเอกชน","ข้าราชการ/รัฐวิสาหกิจ","ธุรกิจส่วนตัว/ค้าขาย","เกษียณอายุ","รับจ้างทั่วไป","นักเรียน/นักศึกษา","ว่างงาน","อื่นๆ"].map((v,i)=>`<label class="p1-radio ${P1.q19===v?'active':''}" data-field="q19" data-value="${v}" onclick="toggleRadio('q19','${v}')">${i+1}) ${v}</label>`).join("")}
+          </div>
+          ${P1.q19==="อื่นๆ"?`<input class="p1-input" style="margin-top:8px;max-width:280px" placeholder="ระบุ..." value="${P1.q19_other||''}" oninput="P1.q19_other=this.value">`:""}
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.10 เขตที่พักอาศัย</label>
+          <div class="p1-radio-group">
+            ${["ในเมือง","ชานเมือง"].map((v,i)=>`<label class="p1-radio ${P1.q110===v?'active':''}" data-field="q110" data-value="${v}" onclick="toggleRadio('q110','${v}')">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">ยานพาหนะและใบขับขี่</div>
+        <div class="p1-row">
+          <label class="p1-label">1.11 จำนวนยานพาหนะในครัวเรือน</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${[["จักรยาน/สกูตเตอร์","q111a"],["รถจักรยานยนต์","q111b"],["รถยนต์","q111c"]].map(([lbl,k])=>`
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                <span style="font-size:12px;color:var(--mu)">${lbl}</span>
+                <input class="p1-input" type="number" min="0" value="${P1[k]||0}" oninput="P1['${k}']=this.value" style="width:80px;text-align:center">
+              </div>`).join("")}
+          </div>
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.12 มีใบอนุญาตขับขี่ประเภทใดบ้าง <span>(เลือกได้มากกว่า 1)</span></label>
+          <div class="p1-check-group">
+            ${["รถยนต์","รถจักรยานยนต์"].map((v,i)=>`<label class="p1-radio ${(P1.q112||[]).includes(v)?'active':''}" data-field="q112" data-value="${v}" onclick="toggleRadio('q112','${v}',true)">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+        <div class="p1-row">
+          <label class="p1-label">1.13 จำนวนใบอนุญาตขับขี่ในครัวเรือน</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            ${[["รถยนต์","q113a"],["รถจักรยานยนต์","q113b"]].map(([lbl,k])=>`
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                <span style="font-size:12px;color:var(--mu)">${lbl}</span>
+                <input class="p1-input" type="number" min="0" value="${P1[k]||0}" oninput="P1['${k}']=this.value" style="width:80px;text-align:center">
+              </div>`).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">วัตถุประสงค์การเดินทางสาธารณะ</div>
+        <div class="p1-row">
+          <label class="p1-label">1.14 วัตถุประสงค์ของการเดินทางด้วยระบบขนส่งสาธารณะ <span>(เลือกได้มากกว่า 1)</span></label>
+          <div class="p1-check-group">
+            ${["เพื่อไปเรียน/ไปทำงาน","เพื่อซื้อของ","เพื่อพักผ่อน/ท่องเที่ยว","เพื่อกิจกรรมกีฬา","อื่นๆ"].map((v,i)=>`<label class="p1-radio ${(P1.q114||[]).includes(v)?'active':''}" data-field="q114" data-value="${v}" onclick="toggleRadio('q114','${v}',true)">${i+1}) ${v}</label>`).join("")}
+          </div>
+        </div>
+      </div>
+
+      <div class="p1-section">
+        <div class="p1-section-title">1.15 การเดินทางเฉลี่ยรายสัปดาห์</div>
+        <table class="p1-table">
+          <thead><tr><th>ยานพาหนะ/บริการ</th><th>ครั้ง/สัปดาห์</th><th>บาท/สัปดาห์</th></tr></thead>
+          <tbody>
+            ${[
+              ["A. ยานพาหนะส่วนบุคคล","",""],
+              ["การเดิน/วิ่ง","q115_walk_n","q115_walk_b"],
+              ["จักรยาน/สกูตเตอร์","q115_bike_n","q115_bike_b"],
+              ["รถยนต์","q115_car_n","q115_car_b"],
+              ["รถจักรยานยนต์","q115_moto_n","q115_moto_b"],
+              ["B. บริการสาธารณะ/รับจ้าง","",""],
+              ["รถไฟฟ้า (BTS/MRT/ARL)","q115_bts_n","q115_bts_b"],
+              ["เช่าจักรยาน/สกูตเตอร์","q115_rentbike_n","q115_rentbike_b"],
+              ["รถยนต์รับจ้าง/แท็กซี่","q115_taxi_n","q115_taxi_b"],
+              ["รถจักรยานยนต์รับจ้าง","q115_motosvc_n","q115_motosvc_b"],
+              ["รถเมล์/รถบัส","q115_bus_n","q115_bus_b"],
+            ].map(([lbl,kn,kb])=>
+              kn==="" ? `<tr><td colspan="3" style="color:var(--gr);font-weight:600;font-size:11px;letter-spacing:1px;padding-top:10px">${lbl}</td></tr>`
+              : `<tr><td>${lbl}</td>
+                  <td><input type="number" min="0" value="${P1[kn]||''}" oninput="P1['${kn}']=this.value" placeholder="0"></td>
+                  <td><input type="number" min="0" value="${P1[kb]||''}" oninput="P1['${kb}']=this.value" placeholder="0"></td>
+                 </tr>`
+            ).join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <button class="p1-next-btn" onclick="goToPart3()">✓ บันทึกส่วนที่ 1</button>
+    </div>
+  `;
+}
+
+function takeScreenshot(){
+  const el = document.getElementById('capture-box');
+  if(!el) return;
+  const btn = document.getElementById('ss-btn');
+  btn.textContent = '⏳ กำลังสร้างภาพ...';
+  btn.disabled = true;
+  const scale = 3, w = el.offsetWidth, h = el.offsetHeight;
+  domtoimage.toPng(el, {
+    width: w*scale, height: h*scale,
+    style:{ transform:`scale(${scale})`, transformOrigin:'top left', width:w+'px', height:h+'px', maxWidth:w+'px', wordBreak:'keep-all', whiteSpace:'nowrap', overflow:'visible' },
+    bgcolor:'#1e2d47'
+  }).then(url=>{
+    const a = document.createElement('a'); a.download='maas-result.png'; a.href=url; a.click();
+    btn.innerHTML='📸 บันทึกภาพผลการเลือก'; btn.disabled=false;
+  }).catch(()=>{ btn.innerHTML='📸 บันทึกภาพผลการเลือก'; btn.disabled=false; });
+}
+
+
+function takeScreenshot(){
+  const el = document.getElementById("capture-box");
+  if(!el) return;
+  const btn = document.getElementById("ss-btn");
+  btn.textContent = "⏳ กำลังสร้างภาพ...";
+  btn.disabled = true;
+  const scale = 3;
+  const w = el.offsetWidth;
+  const h = el.offsetHeight;
+  domtoimage.toPng(el, {
+    width: w * scale,
+    height: h * scale,
+    style: {
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      width: w + "px",
+      height: h + "px",
+      maxWidth: w + "px",
+      wordBreak: "keep-all",
+      whiteSpace: "nowrap",
+      overflow: "visible",
+    },
+    bgcolor: "#1e2d47"
+  }).then(dataUrl => {
+    const a = document.createElement("a");
+    a.download = "maas-plan-result.png";
+    a.href = dataUrl;
+    a.click();
+    btn.innerHTML = "📸 บันทึกภาพผลการเลือก";
+    btn.disabled = false;
+  }).catch(()=>{ btn.innerHTML="📸 บันทึกภาพผลการเลือก"; btn.disabled=false; });
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', render);
+} else {
+  render();
+}
+</script>
+</body>
+</html>
